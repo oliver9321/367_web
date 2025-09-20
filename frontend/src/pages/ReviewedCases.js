@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import CaseCard from '../components/CaseCard';
 import CaseModal from '../components/CaseModal';
+import TrafficLawsPanel from '../components/TrafficLawsPanel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const ReviewedCases = () => {
+  const { globalFilter } = useOutletContext() || { globalFilter: '' };
   const [cases, setCases] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,14 +39,20 @@ const ReviewedCases = () => {
     setSelectedCase(caseItem);
   };
 
+  // Combined filter: local search + status filter + global filter
   const filteredCases = cases.filter(caseItem => {
-    const matchesSearch = caseItem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         caseItem.case_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         caseItem.license_plate.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLocalSearch = caseItem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              caseItem.case_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              caseItem.license_plate.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filterStatus === 'all' || caseItem.status === filterStatus;
+    const matchesStatusFilter = filterStatus === 'all' || caseItem.status === filterStatus;
     
-    return matchesSearch && matchesFilter;
+    const matchesGlobalFilter = !globalFilter || 
+                               caseItem.title.toLowerCase().includes(globalFilter.toLowerCase()) ||
+                               caseItem.case_number.toLowerCase().includes(globalFilter.toLowerCase()) ||
+                               new Date(caseItem.submitted_at).toLocaleDateString('es-ES').includes(globalFilter.toLowerCase());
+    
+    return matchesLocalSearch && matchesStatusFilter && matchesGlobalFilter;
   });
 
   if (loading) {
@@ -63,6 +72,7 @@ const ReviewedCases = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Casos Revisados</h2>
           
           <div className="space-y-3">
+            {/* Local Search */}
             <div className="relative">
               <input
                 type="text"
@@ -76,6 +86,7 @@ const ReviewedCases = () => {
               </svg>
             </div>
 
+            {/* Status Filter */}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -85,6 +96,22 @@ const ReviewedCases = () => {
               <option value="approved">Aprobados</option>
               <option value="rejected">Rechazados</option>
             </select>
+
+            {/* Global Filter Indicator */}
+            {globalFilter && (
+              <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                <div className="flex items-center text-yellow-800">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Filtro global: "{globalFilter}"
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 text-sm text-gray-600">
+            {filteredCases.length} de {cases.length} casos
           </div>
         </div>
 
@@ -94,7 +121,12 @@ const ReviewedCases = () => {
               <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p>No hay casos revisados</p>
+              <p>
+                {globalFilter || searchTerm || filterStatus !== 'all'
+                  ? 'No se encontraron casos que coincidan'
+                  : 'No hay casos revisados'
+                }
+              </p>
             </div>
           ) : (
             <div className="space-y-2 p-4">
@@ -109,6 +141,9 @@ const ReviewedCases = () => {
             </div>
           )}
         </div>
+
+        {/* Traffic Laws Panel */}
+        <TrafficLawsPanel />
       </div>
 
       {/* Center - Case Details */}
