@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { useOutletContext } from 'react-router-dom';
 import CaseModal from '../components/CaseModal';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -8,12 +9,14 @@ const API = `${BACKEND_URL}/api`;
 
 const ProfilePage = () => {
   const { user } = useAuth();
+  const { globalFilter } = useOutletContext() || { globalFilter: '' };
   const [statistics, setStatistics] = useState(null);
   const [allCases, setAllCases] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('current');
+  const [selectedCategory, setSelectedCategory] = useState('pending');
 
   useEffect(() => {
     if (user) {
@@ -56,12 +59,48 @@ const ProfilePage = () => {
   };
 
   const getCasesByStatus = (status) => {
-    return allCases.filter(caseItem => caseItem.status === status);
+    const cases = allCases.filter(caseItem => caseItem.status === status);
+    
+    // Apply global filter if exists
+    if (globalFilter) {
+      return cases.filter(caseItem =>
+        caseItem.title.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        caseItem.case_number.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        new Date(caseItem.submitted_at).toLocaleDateString('es-ES').includes(globalFilter.toLowerCase())
+      );
+    }
+    return cases;
   };
 
   const pendingCases = getCasesByStatus('pending');
   const approvedCases = getCasesByStatus('approved');
   const rejectedCases = getCasesByStatus('rejected');
+
+  const categories = [
+    {
+      key: 'pending',
+      title: 'Casos pendientes de completar',
+      count: pendingCases.length,
+      cases: pendingCases,
+      color: 'text-yellow-600 bg-yellow-100'
+    },
+    {
+      key: 'approved', 
+      title: 'Casos completados',
+      count: approvedCases.length,
+      cases: approvedCases,
+      color: 'text-green-600 bg-green-100'
+    },
+    {
+      key: 'rejected',
+      title: 'Casos rechazados', 
+      count: rejectedCases.length,
+      cases: rejectedCases,
+      color: 'text-red-600 bg-red-100'
+    }
+  ];
+
+  const selectedCategoryData = categories.find(cat => cat.key === selectedCategory);
 
   if (loading) {
     return (
@@ -160,140 +199,136 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Cases Gallery */}
-      <div className="space-y-6">
-        {/* Pending Cases */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Casos pendientes de completar:
-          </h3>
-          {pendingCases.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No hay casos pendientes</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {pendingCases.slice(0, 4).map((caseItem) => (
-                <div
-                  key={caseItem.id}
-                  onClick={() => handleCaseClick(caseItem)}
-                  className="cursor-pointer group"
+      {/* Cases Management Section */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="flex">
+          {/* Left Sidebar - Categories */}
+          <div className="w-80 border-r border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Gestión de Casos</h3>
+            
+            <div className="space-y-3">
+              {categories.map((category) => (
+                <button
+                  key={category.key}
+                  onClick={() => setSelectedCategory(category.key)}
+                  className={`w-full text-left p-4 rounded-lg border transition-all duration-200 ${
+                    selectedCategory === category.key
+                      ? 'border-blue-500 bg-blue-50 shadow-sm'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
                 >
-                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-2">
-                    <img
-                      src={caseItem.images?.[0]?.url || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300'}
-                      alt={caseItem.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-1">{category.title}</h4>
+                      <p className="text-sm text-gray-600">
+                        {globalFilter 
+                          ? `${category.cases.length} casos encontrados`
+                          : `${category.count} casos totales`
+                        }
+                      </p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${category.color}`}>
+                      {category.cases.length}
+                    </div>
                   </div>
-                  <h4 className="font-medium text-sm text-gray-900 truncate">{caseItem.title}</h4>
-                  <p className="text-xs text-gray-600">{caseItem.case_number}</p>
-                  <p className="text-xs text-gray-500">
-                    Sometido {Math.floor(Math.random() * 5 + 1)} horas, {Math.floor(Math.random() * 60)} minutos
-                  </p>
-                </div>
+                </button>
               ))}
             </div>
-          )}
-        </div>
 
-        {/* Approved Cases */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Casos completados</h3>
-            <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-              Casos aprobados
-            </div>
+            {globalFilter && (
+              <div className="mt-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">Filtro activo</p>
+                    <p className="text-xs text-yellow-700">"{globalFilter}"</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          {approvedCases.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No hay casos aprobados</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {approvedCases.slice(0, 5).map((caseItem) => (
-                <div
-                  key={caseItem.id}
-                  onClick={() => handleCaseClick(caseItem)}
-                  className="cursor-pointer group"
-                >
-                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-2">
-                    <img
-                      src={caseItem.images?.[0]?.url || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300'}
-                      alt={caseItem.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  </div>
-                  <h4 className="font-medium text-sm text-gray-900 truncate">{caseItem.title}</h4>
-                  <p className="text-xs text-gray-600">{caseItem.case_number}</p>
-                  <p className="text-xs text-gray-500">
-                    Aprobado {new Date(caseItem.reviewed_at).toLocaleDateString('es-ES')}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Rejected Cases */}
-        {rejectedCases.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Casos rechazados</h3>
-              <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
-                Casos rechazados
+          {/* Right Content - Cases Display */}
+          <div className="flex-1 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {selectedCategoryData?.title}
+              </h3>
+              <div className="text-sm text-gray-600">
+                {selectedCategoryData?.cases.length} casos
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {rejectedCases.slice(0, 5).map((caseItem) => (
-                <div
-                  key={caseItem.id}
-                  onClick={() => handleCaseClick(caseItem)}
-                  className="cursor-pointer group"
-                >
-                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-2">
-                    <img
-                      src={caseItem.images?.[0]?.url || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300'}
-                      alt={caseItem.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  </div>
-                  <h4 className="font-medium text-sm text-gray-900 truncate">{caseItem.title}</h4>
-                  <p className="text-xs text-gray-600">{caseItem.case_number}</p>
-                  <p className="text-xs text-gray-500">
-                    Rechazado {new Date(caseItem.reviewed_at).toLocaleDateString('es-ES')}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* More Cases Available */}
-        <div className="text-center">
-          <button className="bg-red-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-600 transition duration-200">
-            Mostrar más casos completados
-          </button>
-        </div>
-
-        {/* Featured Cases */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {allCases.slice(0, 3).map((caseItem) => (
-            <div
-              key={caseItem.id}
-              onClick={() => handleCaseClick(caseItem)}
-              className="bg-black rounded-lg overflow-hidden cursor-pointer group relative"
-            >
-              <img
-                src={caseItem.images?.[0]?.url || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400'}
-                alt={caseItem.title}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
-                <h4 className="text-white font-medium">{caseItem.title}</h4>
-                <p className="text-gray-300 text-sm">{caseItem.case_number}</p>
-                <p className="text-gray-400 text-xs">
-                  {new Date(caseItem.submitted_at).toLocaleDateString('es-ES')}
+            {selectedCategoryData?.cases.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-gray-500">
+                  {globalFilter 
+                    ? 'No se encontraron casos que coincidan con tu búsqueda'
+                    : `No hay casos ${selectedCategory === 'pending' ? 'pendientes' : selectedCategory === 'approved' ? 'aprobados' : 'rechazados'}`
+                  }
                 </p>
               </div>
-            </div>
-          ))}
+            ) : (
+              <div className="h-96 overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedCategoryData?.cases.map((caseItem) => (
+                    <div
+                      key={caseItem.id}
+                      onClick={() => handleCaseClick(caseItem)}
+                      className="cursor-pointer group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="aspect-video bg-gray-100 overflow-hidden">
+                        <img
+                          src={caseItem.images?.[0]?.url || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300'}
+                          alt={caseItem.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h4 className="font-medium text-sm text-gray-900 truncate mb-1">
+                          {caseItem.title}
+                        </h4>
+                        <p className="text-xs text-gray-600 mb-2">{caseItem.case_number}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-500">
+                            {selectedCategory === 'pending' 
+                              ? `Sometido ${Math.floor((new Date() - new Date(caseItem.submitted_at)) / (1000 * 60 * 60))}h`
+                              : `${selectedCategory === 'approved' ? 'Aprobado' : 'Rechazado'} ${new Date(caseItem.reviewed_at).toLocaleDateString('es-ES')}`
+                            }
+                          </p>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            selectedCategory === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            selectedCategory === 'approved' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {selectedCategory === 'pending' ? 'Pendiente' :
+                             selectedCategory === 'approved' ? 'Aprobado' : 'Rechazado'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Scroll Indicator */}
+            {selectedCategoryData?.cases.length > 6 && (
+              <div className="mt-4 text-center">
+                <div className="inline-flex items-center text-sm text-gray-500">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Desplázate para ver más casos
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
