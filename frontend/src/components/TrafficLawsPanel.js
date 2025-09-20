@@ -7,35 +7,76 @@ const API = `${BACKEND_URL}/api`;
 const TrafficLawsPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [trafficLaws, setTrafficLaws] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedLaws, setExpandedLaws] = useState(new Set());
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  useEffect(() => {
-    fetchTrafficLaws();
-  }, []);
-
-  const fetchTrafficLaws = async () => {
-    try {
-      const response = await axios.get(`${API}/traffic-laws`);
-      setTrafficLaws(response.data);
-    } catch (error) {
-      console.error('Error fetching traffic laws:', error);
+  // Mock data for traffic laws with descriptions
+  const mockTrafficLaws = [
+    {
+      title: 'Actividades en Vehículos de Motor',
+      article: 'Art. 155-A',
+      description: 'Prohibición de realizar actividades que distraigan la atención del conductor durante la conducción, incluyendo el uso de dispositivos móviles sin manos libres.'
+    },
+    {
+      title: 'Aditamentos en las Placas (Art. 189-B)',
+      article: 'Art. 189-B',
+      description: 'Está prohibido colocar cualquier objeto, material o sustancia sobre las placas de identificación que impida su correcta lectura o identificación.'
+    },
+    {
+      title: 'Alterar o Modificar la lectura del odómetro',
+      article: 'Art. 201-C',
+      description: 'Prohibición de alterar, modificar o manipular el odómetro de un vehículo de motor con el propósito de cambiar la lectura del millaje.'
+    },
+    {
+      title: 'Aparatos Receptores de Imágenes en Vehículos',
+      article: 'Art. 158-D',
+      description: 'Los conductores no podrán utilizar aparatos receptores de imágenes, televisores o dispositivos similares mientras el vehículo esté en movimiento.'
+    },
+    {
+      title: 'Alcanzar y Pasar por la Izquierda (Art. 112-A)',
+      article: 'Art. 112-A',  
+      description: 'Regulaciones sobre cuándo y cómo es permitido adelantar a otro vehículo por el lado izquierdo de manera segura y legal.'
+    },
+    {
+      title: 'Estacionamiento Indebido',
+      article: 'Art. 145-B',
+      description: 'Prohibición de estacionar vehículos en lugares no autorizados, zonas de carga y descarga, aceras, o espacios reservados para personas con discapacidad.'
+    },
+    {
+      title: 'Exceso de Velocidad en Zona Escolar',
+      article: 'Art. 98-C',
+      description: 'Límites especiales de velocidad en zonas escolares y horarios específicos. Multas agravadas por poner en riesgo la seguridad de menores.'
+    },
+    {
+      title: 'Transitar sin Placa de Identificación',
+      article: 'Art. 63-17, num. 13',
+      description: 'Todo vehículo debe portar las placas de identificación correspondientes en la parte delantera y trasera, según corresponda por tipo de vehículo.'
+    },
+    {
+      title: 'Usar Celular mientras Conduce',
+      article: 'Art. 155-F',
+      description: 'Prohibición total del uso de teléfonos celulares o dispositivos móviles mientras se conduce, excepto con sistemas de manos libres debidamente instalados.'
     }
-  };
-
-  const lawsMenuItems = [
-    'Actividades en Vehículos...',
-    'Aditamentos en las Placas (Art. 189-B)',
-    'Alterar o Modificar la lectura del...',
-    'Aparatos Receptores de Imágenes...',
-    'Actividades en Vehículos de Motor...',
-    'Alcanzar y Pasar por la Izquierda (Art...)',
-    'Alterar o Modificar la lectura del...',
-    'Aparatos Receptores de Imágenes (Art...)',
-    'Aditamentos en las Placas'
   ];
 
-  const filteredLaws = lawsMenuItems.filter(law => 
-    law.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    // In a real implementation, you would fetch from the API
+    setTrafficLaws(mockTrafficLaws);
+  }, []);
+
+  const handleLawToggle = (index) => {
+    const newExpanded = new Set(expandedLaws);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedLaws(newExpanded);
+  };
+
+  const filteredLaws = trafficLaws.filter(law => 
+    law.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    law.article.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -67,22 +108,56 @@ const TrafficLawsPanel = () => {
           </button>
         </div>
 
-        <div className="space-y-1">
-          {filteredLaws.slice(0, isExpanded ? filteredLaws.length : 5).map((law, index) => (
-            <div key={index} className="flex items-center text-xs text-gray-600 hover:text-gray-800 cursor-pointer py-1">
-              <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2 flex-shrink-0"></div>
-              <span className="truncate">{law}</span>
+        <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+          {filteredLaws.map((law, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg">
+              <button
+                onClick={() => handleLawToggle(index)}
+                className="w-full flex items-center justify-between text-left px-3 py-2 hover:bg-gray-50 transition-colors duration-200"
+              >
+                <div className="flex items-center text-xs text-gray-600">
+                  <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2 flex-shrink-0"></div>
+                  <div>
+                    <div className="font-medium">{law.title}</div>
+                    <div className="text-gray-500">{law.article}</div>
+                  </div>
+                </div>
+                <svg 
+                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                    expandedLaws.has(index) ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {expandedLaws.has(index) && (
+                <div className="px-3 pb-3 pt-1 border-t border-gray-100">
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    {law.description}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
           
-          {filteredLaws.length > 5 && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-xs text-blue-600 hover:text-blue-800 mt-2"
-            >
-              {isExpanded ? 'Ver menos' : `Ver ${filteredLaws.length - 5} más...`}
-            </button>
+          {filteredLaws.length === 0 && (
+            <div className="text-center py-4 text-gray-500 text-sm">
+              No se encontraron leyes que coincidan con tu búsqueda
+            </div>
           )}
+        </div>
+
+        <div className="mt-3 pt-2 border-t border-gray-100">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+          >
+            {isExpanded ? 'Colapsar panel' : 'Expandir panel'}
+          </button>
         </div>
       </div>
     </div>
