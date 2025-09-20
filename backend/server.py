@@ -384,7 +384,7 @@ async def initialize_data():
                 "case_number": "#MRA002",
                 "title": "Caso \"Mira Azul\"",
                 "description": "Exceso de velocidad en zona escolar",
-                "license_plate": "#000000",
+                "license_plate": "B456789",
                 "location": "Calle Ludovino Fdez, Distrito Nacional, Rep. Dom.",
                 "images": [
                     {"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", "description": "Vehículo en movimiento"},
@@ -396,10 +396,57 @@ async def initialize_data():
             },
             {
                 "id": str(uuid.uuid4()),
-                "case_number": "#PB003",
+                "case_number": "#UCP003",
+                "title": "Caso \"Uso Celular Prohibido\"",
+                "description": "Conductor usando celular mientras conduce",
+                "license_plate": "C789012",
+                "location": "Avenida Winston Churchill, cerca del Malecón",
+                "coordinates": "18.4701° N, 69.9001° W",
+                "images": [
+                    {"url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400", "description": "Conductor con celular"},
+                    {"url": "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400", "description": "Vista del vehículo"}
+                ],
+                "status": "pending",
+                "submitted_at": datetime.utcnow() - timedelta(hours=12),
+                "due_date": datetime.utcnow() + timedelta(days=6)
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "case_number": "#EVE004",
+                "title": "Caso \"Exceso Velocidad Extremo\"",
+                "description": "Vehículo superando límite de velocidad en autopista",
+                "license_plate": "D345678",
+                "location": "Autopista Duarte, kilómetro 15",
+                "images": [
+                    {"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", "description": "Radar mostrando velocidad"},
+                    {"url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400", "description": "Vehículo en autopista"}
+                ],
+                "status": "pending",
+                "submitted_at": datetime.utcnow() - timedelta(hours=6),
+                "due_date": datetime.utcnow() + timedelta(days=6)
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "case_number": "#SEA005",
+                "title": "Caso \"Semáforo en Rojo\"",
+                "description": "Vehículo pasando semáforo en rojo",
+                "license_plate": "E901234",
+                "location": "Intersección Av. 27 de Febrero con Máximo Gómez",
+                "coordinates": "18.4801° N, 69.9301° W",
+                "images": [
+                    {"url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400", "description": "Semáforo en rojo"},
+                    {"url": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400", "description": "Vehículo cruzando"}
+                ],
+                "status": "pending",
+                "submitted_at": datetime.utcnow() - timedelta(hours=3),
+                "due_date": datetime.utcnow() + timedelta(days=7)
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "case_number": "#PB006",
                 "title": "Caso \"Porsche Bolera\"",
                 "description": "Estacionamiento en zona prohibida",
-                "license_plate": "#000000",
+                "license_plate": "F567890",
                 "location": "Centro Comercial, Plaza Central",
                 "images": [
                     {"url": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400", "description": "Vehículo estacionado"},
@@ -412,6 +459,42 @@ async def initialize_data():
                 "review_comments": "Caso aprobado. Multa aplicada por estacionamiento indebido.",
                 "traffic_law": sample_laws[2],
                 "fine_amount": 1500.0
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "case_number": "#TR007",
+                "title": "Caso \"Tesla Rojo\"",
+                "description": "Vehículo bloqueando cruce peatonal",
+                "license_plate": "G123456",
+                "location": "Avenida Abraham Lincoln, frente al Centro Olímpico",
+                "images": [
+                    {"url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400", "description": "Vehículo bloqueando paso"},
+                    {"url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400", "description": "Vista del cruce"}
+                ],
+                "status": "approved",
+                "submitted_at": datetime.utcnow() - timedelta(days=3),
+                "reviewed_at": datetime.utcnow() - timedelta(days=1),
+                "reviewed_by": sample_user["id"],
+                "review_comments": "Infracción confirmada. Vehículo obstruyendo paso peatonal.",
+                "traffic_law": sample_laws[1],
+                "fine_amount": 3000.0
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "case_number": "#MD008",
+                "title": "Caso \"Motocicleta Doble Vía\"",
+                "description": "Motocicleta transitando en sentido contrario",
+                "license_plate": "H789012",
+                "location": "Calle El Conde, Zona Colonial",
+                "images": [
+                    {"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", "description": "Motocicleta en sentido contrario"},
+                    {"url": "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=400", "description": "Señalización vial"}
+                ],
+                "status": "rejected",
+                "submitted_at": datetime.utcnow() - timedelta(days=4),
+                "reviewed_at": datetime.utcnow() - timedelta(days=1),
+                "reviewed_by": sample_user["id"],
+                "review_comments": "Caso rechazado. No se puede determinar claramente la infracción en las imágenes proporcionadas."
             }
         ]
         
