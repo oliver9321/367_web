@@ -8,7 +8,6 @@ const TrafficLawsPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [trafficLaws, setTrafficLaws] = useState([]);
   const [expandedLaws, setExpandedLaws] = useState(new Set());
-  const [isExpanded, setIsExpanded] = useState(true);
 
   // Mock data for traffic laws with descriptions
   const mockTrafficLaws = [
@@ -80,10 +79,10 @@ const TrafficLawsPanel = () => {
   );
 
   return (
-    <div className="border-t border-gray-200">
+    <div>
       <div className="p-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-md font-bold text-gray-900">Consulta de leyes de tránsito</h3>
+          <h3 className="text-md font-bold text-gray-900 mb-1">Consulta de leyes de tránsito</h3>
         </div>
         <div className="flex items-center text-xs text-green-600  mb-3">
             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +107,7 @@ const TrafficLawsPanel = () => {
           </button>
         </div>
 
-        <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+        <div className="space-y-2 overflow-y-auto custom-scrollbar">
           {filteredLaws.map((law, index) => (
             <div key={index} className="border border-gray-200 rounded-lg">
               <button
@@ -149,15 +148,6 @@ const TrafficLawsPanel = () => {
               No se encontraron leyes que coincidan con tu búsqueda
             </div>
           )}
-        </div>
-
-        <div className="mt-3 pt-2 border-t border-gray-100">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-          >
-            {isExpanded ? 'Colapsar panel' : 'Expandir panel'}
-          </button>
         </div>
       </div>
     </div>
