@@ -3,6 +3,9 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
 import CaseModal from '../components/CaseModal';
+import intrantLogo from '../assets/img/intrantLogo.png';
+import procuraduriaLogo from '../assets/img/procuraduriaLogo.png';
+import digesetLogo from '../assets/img/digesetLogo.jpeg';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -134,13 +137,13 @@ const ProfilePage = () => {
           </div>
 
           <div className="text-right">
-            <button className="btn-secondary mb-2">
+            <button className="btn-secondary mb-4">
               Editar perfil
             </button>
             <div className="flex items-center space-x-4 text-sm text-gray-600">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Coat_of_arms_of_the_Dominican_Republic.svg/100px-Coat_of_arms_of_the_Dominican_Republic.svg.png" alt="Procuraduría" className="h-8" />
-              <img src="https://intrant.gob.do/images/logo_intrant.png" alt="INTRANT" className="h-8" />
-              <div className="bg-green-600 text-white px-2 py-1 rounded text-xs">INTRANT</div>
+              <img src={procuraduriaLogo} alt="Procuraduría" className="h-10" />
+              <img src={intrantLogo} alt="INTRANT" className="h-10" />
+               <img src={digesetLogo} alt="INTRANT" className="h-10" />
             </div>
           </div>
         </div>
