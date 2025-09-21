@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import logo from "../assets/img/logo1.1_light_mode.png";
+import logoWhite from "../assets/img/Logo 367-1.2_darkmode.png";
 
 const DashboardLayout = () => {
+
   const { user, logout } = useAuth();
   const location = useLocation();
   const [globalFilter, setGlobalFilter] = useState('');
@@ -116,12 +118,7 @@ const DashboardLayout = () => {
             <div>
               <div className="flex items-center space-x-4 mb-4">
                 <div className="flex items-center">
-                  <span className="text-2xl font-bold text-white">367</span>
-                  <div className="flex space-x-1 ml-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  </div>
+                    <img className="h-9 w-auto" src={logoWhite} alt="367 Logo" />
                 </div>
               </div>
               <div className="text-sm text-gray-300">

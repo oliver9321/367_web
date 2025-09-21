@@ -132,7 +132,7 @@ const LoginPage = () => {
         <div className="mt-6 text-center">
           <a
             href="#"
-            className="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-200"
+            className="text-[#5fbdca] hover:text-[#00606d] text-sm transition-colors duration-200"
           >
             ¿No puedes ingresar a tu cuenta?
             <br />
