@@ -31,8 +31,8 @@ const ProfilePage = () => {
         axios.get(`${API}/cases`)
       ]);
       
-      setStatistics(statsResponse.data);
-      setAllCases(casesResponse.data);
+      setStatistics(statsResponse?.data);
+      setAllCases(casesResponse?.data);
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
