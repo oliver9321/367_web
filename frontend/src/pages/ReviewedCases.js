@@ -67,7 +67,7 @@ const ReviewedCases = () => {
   return (
     <div className="h-screen flex bg-gray-50">
       {/* Left Sidebar - Cases List */}
-      <div className="w-80 bg-white shadow-sm border-r border-gray-200 flex flex-col">
+      <div className="w-[450px] bg-white shadow-sm border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Casos Revisados</h2>
           
@@ -264,17 +264,17 @@ const ReviewedCases = () => {
       <div className="w-80 bg-white shadow-sm border-l border-gray-200 p-4">
         {selectedCase && (
           <div>
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">NÚMERO DE CASO</h3>
-              <p className="text-lg font-semibold">{selectedCase.case_number}</p>
+            <div className="mb-4">
+          <h3 className="text-sm font-medium text-gray-500 mb-1">Número de caso</h3>
+              <p className="text-md font-semibold">{selectedCase.case_number}</p>
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">PLACA DEL VEHÍCULO INVOLUCRADO</h3>
-              <p className="text-lg font-semibold">{selectedCase.license_plate}</p>
+            <div className="mb-5">
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Placa del vehículo involucrado</h3>
+              <p className="text-md font-semibold">{selectedCase.license_plate}</p>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-5">
               <div className="flex items-center text-sm text-green-600 mb-2">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -296,18 +296,18 @@ const ReviewedCases = () => {
               </div>
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">ESTADO DEL CASO</h3>
+            <div className="mb-5">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Estado del caso</h3>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 selectedCase.status === 'approved' ? 'status-approved' : 'status-rejected'
               }`}>
-                {selectedCase.status === 'approved' ? 'APROBADO' : 'RECHAZADO'}
+                {selectedCase.status === 'approved' ? 'Aprobado' : 'Rechazado'}
               </span>
             </div>
 
             {selectedCase.traffic_law && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">LEY INFRINGIDA</h3>
+              <div className="mb-5">
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Ley infrigida</h3>
                 <p className="text-sm text-gray-700">
                   {selectedCase.traffic_law.article}, numeral {selectedCase.traffic_law.number}
                 </p>
@@ -316,8 +316,8 @@ const ReviewedCases = () => {
             )}
 
             {selectedCase.fine_amount && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">MULTA APLICADA</h3>
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Multa aplicada</h3>
                 <p className="text-lg font-semibold text-green-600">
                   RD${selectedCase.fine_amount.toLocaleString()}
                 </p>
@@ -326,7 +326,7 @@ const ReviewedCases = () => {
 
             <div className="border-t pt-4">
               <button className="w-full btn-secondary mb-3">
-                Exporta el acta de este expediente
+                Exporta expediente
               </button>
               <button className="w-full text-sm text-blue-600 hover:text-blue-800">
                 Descarga el documento aquí 📋
