@@ -36,10 +36,10 @@ const DashboardLayout = () => {
                   key={item.name}
                   to={item.href}
                   className={({ isActive }) =>
-                    `px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                    `px-3 py-2 text-sm font-medium transition-colors duration-200 ${
                       isActive
-                        ? 'bg-green-100 text-green-700 border-b-2 border-green-500'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                        ? ' text-green-700 border-b-2 border-green-500'
+                        : 'text-gray-500 hover:text-gray-700'
                     }`
                   }
                 >
@@ -88,7 +88,7 @@ const DashboardLayout = () => {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-8xl mx-auto py-6 sm:px-6 lg:px-8">
         <Outlet context={{ globalFilter, setGlobalFilter }} />
       </main>
 
@@ -123,7 +123,7 @@ const DashboardLayout = () => {
               </div>
               <div className="text-sm text-gray-300">
                 <p>@367online | @367.sdq</p>
-                <p>367 2024 ® Todos los derechos reservados</p>
+                <p>367 2025 ® Todos los derechos reservados</p>
               </div>
             </div>
           </div>
