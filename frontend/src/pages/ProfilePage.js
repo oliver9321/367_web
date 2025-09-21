@@ -121,7 +121,7 @@ const ProfilePage = () => {
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-4">
             <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg p-4">
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-14 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
@@ -129,6 +129,7 @@ const ProfilePage = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{user?.full_name}</h1>
               <p className="text-gray-600">ID: {user?.badge_id}</p>
+               <p className="text-gray-500">Miembro desde el 2023</p>
               <div className="flex items-center mt-2">
                 {renderStars(user?.rating || 4.0)}
                 <span className="ml-2 text-sm text-gray-600">({user?.rating || 4.0}/5)</span>
@@ -137,7 +138,7 @@ const ProfilePage = () => {
           </div>
 
           <div className="text-right">
-            <button className="btn-secondary mb-4">
+            <button className="btn-secondary mb-7">
               Editar perfil
             </button>
             <div className="flex items-center space-x-4 text-sm text-gray-600">
