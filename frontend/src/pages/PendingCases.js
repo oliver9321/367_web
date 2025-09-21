@@ -23,7 +23,7 @@ const PendingCases = () => {
 
   const fetchPendingCases = async () => {
     try {
-      const response = await axios.get(`${API}/cases/pending`);
+      const response = await axios.get(`${API}/cases?status=pending`);
       setCases(response.data);
       if (response.data.length > 0) {
         setSelectedCase(response.data[0]);
@@ -87,15 +87,15 @@ const PendingCases = () => {
   return (
     <div className="h-screen flex bg-gray-50">
       {/* Left Sidebar - Cases List */}
-      <div className="w-80 bg-white shadow-sm border-r border-gray-200 flex flex-col">
+      <div className="w-[450px] bg-white shadow-sm border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Casos Pendientes</h2>
-          
+          <h3 className="text-md font-bold text-gray-900 mb-3">Casos Pendientes</h3>
+
           {/* Local Search */}
           <div className="relative mb-3">
             <input
               type="text"
-              placeholder="Buscar casos..."
+              placeholder="Buscar caso..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -177,18 +177,18 @@ const PendingCases = () => {
       <div className="w-80 bg-white shadow-sm border-l border-gray-200 p-4">
         {selectedCase && (
           <div>
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">NÚMERO DE CASO</h3>
-              <p className="text-lg font-semibold">{selectedCase.case_number}</p>
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Número de caso</h3>
+              <p className="text-md font-semibold">{selectedCase.case_number}</p>
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">PLACA DEL VEHÍCULO INVOLUCRADO</h3>
-              <p className="text-lg font-semibold">{selectedCase.license_plate}</p>
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Placa del vehículo involucrado</h3>
+              <p className="text-md font-semibold">{selectedCase.license_plate}</p>
             </div>
 
-            <div className="mb-6">
-              <div className="flex items-center text-sm text-green-600 mb-2">
+            <div className="mb-4">
+              <div className="flex items-center text-sm text-green-600 mb-1">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -210,25 +210,25 @@ const PendingCases = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">REFERENCIA DEL LUGAR</h3>
-              <p className="text-sm text-gray-700">{selectedCase.description}</p>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Referencia del lugar</h3>
+              <p className="text-sm">{selectedCase.description}</p>
             </div>
 
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">COMENTARIOS</h3>
-              <p className="text-sm text-gray-700 italic">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Comentarios</h3>
+              <p className="text-sm italic">
                 "Fíjense como gira en U donde se ve claramente que no puede"
               </p>
             </div>
 
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">USUARIO SOMETEDOR</h3>
-              <p className="text-sm text-gray-700">@gestionperez</p>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Usuario sometedor</h3>
+              <p className="text-sm">@gestionperez</p>
             </div>
 
             <div className="border-t pt-4">
               <button className="w-full btn-secondary mb-3">
-                Exporta el acta de este expediente
+                Exporta expediente
               </button>
               <button className="w-full text-sm text-blue-600 hover:text-blue-800">
                 Descarga el documento aquí 📋
