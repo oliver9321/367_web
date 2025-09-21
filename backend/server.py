@@ -1,38 +1,66 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import logging
-from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
-import uuid
+from pathlib import Path
 from datetime import datetime, timedelta
-import jwt
 from passlib.context import CryptContext
 from enum import Enum
+import uuid
+import jwt
+import os
+import logging
 
+# -----------------------------
+# Cargar variables de entorno
+# -----------------------------
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
-# Security
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+DB_NAME = os.environ.get("DB_NAME", "test_database")
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
 SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here")
 ALGORITHM = "HS256"
 
-# Create the main app
+# -----------------------------
+# Conexión MongoDB
+# -----------------------------
+client = AsyncIOMotorClient(MONGO_URL)
+db = client[DB_NAME]
+
+# -----------------------------
+# Seguridad
+# -----------------------------
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
+
+# -----------------------------
+# FastAPI App
+# -----------------------------
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -----------------------------
+# Logging
+# -----------------------------
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# -----------------------------
 # Enums
+# -----------------------------
 class CaseStatus(str, Enum):
     PENDING = "pending"
     APPROVED = "approved"
@@ -43,7 +71,9 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     REVIEWER = "reviewer"
 
-# Models
+# -----------------------------
+# Modelos
+# -----------------------------
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
@@ -106,51 +136,44 @@ class CaseReview(BaseModel):
     comments: Optional[str] = None
     traffic_law_id: Optional[str] = None
 
-class Statistics(BaseModel):
-    user_id: str
-    period: str
-    cases_reviewed: int = 0
-    cases_approved: int = 0
-    cases_rejected: int = 0
-    cases_pending: int = 0
-
+# -----------------------------
 # Helper functions
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(hours=24)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+# -----------------------------
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(hours=24)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
-        if user_id is None:
+        if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-    
+
     user = await db.users.find_one({"id": user_id})
-    if user is None:
+    if not user:
         raise HTTPException(status_code=401, detail="User not found")
     return User(**user)
 
-# Routes
+# -----------------------------
+# Routes: auth
+# -----------------------------
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate):
-    # Check if user exists
     existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
     
-    # Create user
     hashed_password = get_password_hash(user_data.password)
     user = User(
         email=user_data.email,
@@ -158,347 +181,84 @@ async def register(user_data: UserCreate):
         role=user_data.role,
         badge_id=user_data.badge_id
     )
-    
     user_dict = user.dict()
     user_dict["password"] = hashed_password
-    
     await db.users.insert_one(user_dict)
-    
-    # Create access token
-    access_token = create_access_token(data={"sub": user.id})
-    
-    return {"access_token": access_token, "token_type": "bearer", "user": user}
+
+    token = create_access_token({"sub": user.id})
+    return {"access_token": token, "token_type": "bearer", "user": user}
 
 @api_router.post("/auth/login")
 async def login(user_data: UserLogin):
     user = await db.users.find_one({"email": user_data.email})
-    if not user or not verify_password(user_data.password, user["password"]):
+    if not user or not verify_password(user_data.password, user.get("password", "")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": user["id"]})
-    user_obj = User(**user)
-    
-    return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
+    token = create_access_token({"sub": user["id"]})
+    return {"access_token": token, "token_type": "bearer", "user": User(**user)}
 
 @api_router.get("/auth/me")
-async def get_me(current_user: User = Depends(get_current_user)):
+async def me(current_user: User = Depends(get_current_user)):
     return current_user
 
+# -----------------------------
+# Routes: cases
+# -----------------------------
 @api_router.get("/cases", response_model=List[Case])
 async def get_cases(status: Optional[CaseStatus] = None, current_user: User = Depends(get_current_user)):
     query = {}
     if status:
         query["status"] = status
-    
     cases = await db.cases.find(query).sort("submitted_at", -1).to_list(1000)
-    return [Case(**case) for case in cases]
-
-@api_router.get("/cases/pending", response_model=List[Case])
-async def get_pending_cases(current_user: User = Depends(get_current_user)):
-    cases = await db.cases.find({"status": {"$in": ["pending", "overdue"]}}).sort("submitted_at", -1).to_list(1000)
-    return [Case(**case) for case in cases]
-
-@api_router.get("/cases/reviewed", response_model=List[Case])
-async def get_reviewed_cases(current_user: User = Depends(get_current_user)):
-    cases = await db.cases.find({"status": {"$in": ["approved", "rejected"]}}).sort("reviewed_at", -1).to_list(1000)
-    return [Case(**case) for case in cases]
-
-@api_router.get("/cases/{case_id}", response_model=Case)
-async def get_case(case_id: str, current_user: User = Depends(get_current_user)):
-    case = await db.cases.find_one({"id": case_id})
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
-    return Case(**case)
+    return [Case(**c) for c in cases]
 
 @api_router.post("/cases", response_model=Case)
 async def create_case(case_data: CaseCreate, current_user: User = Depends(get_current_user)):
-    case = Case(
-        case_number=f"#{uuid.uuid4().hex[:6].upper()}",
-        **case_data.dict()
-    )
-    
+    case = Case(case_number=f"#{uuid.uuid4().hex[:6].upper()}", **case_data.dict())
     await db.cases.insert_one(case.dict())
     return case
 
-@api_router.put("/cases/{case_id}/review")
-async def review_case(case_id: str, review_data: CaseReview, current_user: User = Depends(get_current_user)):
-    case = await db.cases.find_one({"id": case_id})
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
-    
-    update_data = {
-        "status": review_data.status,
-        "reviewed_at": datetime.utcnow(),
-        "reviewed_by": current_user.id,
-        "review_comments": review_data.comments
-    }
-    
-    if review_data.traffic_law_id:
-        traffic_law = await db.traffic_laws.find_one({"id": review_data.traffic_law_id})
-        if traffic_law:
-            update_data["traffic_law"] = TrafficLaw(**traffic_law)
-            update_data["fine_amount"] = traffic_law["fine_amount"]
-    
-    await db.cases.update_one({"id": case_id}, {"$set": update_data})
-    
-    updated_case = await db.cases.find_one({"id": case_id})
-    return Case(**updated_case)
-
-@api_router.get("/traffic-laws", response_model=List[TrafficLaw])
-async def get_traffic_laws(current_user: User = Depends(get_current_user)):
-    laws = await db.traffic_laws.find().to_list(1000)
-    return [TrafficLaw(**law) for law in laws]
-
-@api_router.get("/statistics/{user_id}")
-async def get_user_statistics(user_id: str, period: str = "current", current_user: User = Depends(get_current_user)):
-    # Calculate statistics based on cases
-    if period == "current":
-        start_date = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    else:
-        start_date = datetime.min
-    
-    # Get cases for the period
-    cases = await db.cases.find({
-        "reviewed_by": user_id,
-        "reviewed_at": {"$gte": start_date}
-    }).to_list(1000)
-    
-    pending_cases = await db.cases.find({"status": "pending"}).to_list(1000)
-    
-    stats = {
-        "user_id": user_id,
-        "period": period,
-        "cases_reviewed": len(cases),
-        "cases_approved": len([c for c in cases if c["status"] == "approved"]),
-        "cases_rejected": len([c for c in cases if c["status"] == "rejected"]),
-        "cases_pending": len(pending_cases)
-    }
-    
-    return stats
-
-@api_router.get("/search")
-async def search_cases(q: str, current_user: User = Depends(get_current_user)):
-    cases = await db.cases.find({
-        "$or": [
-            {"title": {"$regex": q, "$options": "i"}},
-            {"case_number": {"$regex": q, "$options": "i"}},
-            {"license_plate": {"$regex": q, "$options": "i"}},
-            {"location": {"$regex": q, "$options": "i"}}
-        ]
-    }).to_list(100)
-    
-    return [Case(**case) for case in cases]
-
-# Include the router in the main app
+# -----------------------------
+# Include router
+# -----------------------------
 app.include_router(api_router)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-
-# Initialize sample data
+# -----------------------------
+# Startup & Shutdown events
+# -----------------------------
 @app.on_event("startup")
-async def initialize_data():
-    # Create sample traffic laws
-    sample_laws = [
-        {
-            "id": str(uuid.uuid4()),
-            "article": "Ley 63-17",
-            "number": "13",
-            "description": "Transitar sin placa",
-            "fine_amount": 2500.0
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "article": "Ley 63-17",
-            "number": "25",
-            "description": "Exceso de velocidad",
-            "fine_amount": 3000.0
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "article": "Ley 63-17",
-            "number": "18",
-            "description": "Estacionamiento indebido",
-            "fine_amount": 1500.0
-        }
-    ]
+async def startup():
+    logger.info("App startup: initializing sample data...")
     
-    # Insert laws if they don't exist
+    # Crear leyes de tránsito de ejemplo
+    sample_laws = [
+        {"id": str(uuid.uuid4()), "article": "Ley 63-17", "number": "13", "description": "Transitar sin placa", "fine_amount": 2500.0},
+        {"id": str(uuid.uuid4()), "article": "Ley 63-17", "number": "25", "description": "Exceso de velocidad", "fine_amount": 3000.0},
+        {"id": str(uuid.uuid4()), "article": "Ley 63-17", "number": "18", "description": "Estacionamiento indebido", "fine_amount": 1500.0},
+    ]
     for law in sample_laws:
-        existing_law = await db.traffic_laws.find_one({"article": law["article"], "number": law["number"]})
-        if not existing_law:
+        existing = await db.traffic_laws.find_one({"article": law["article"], "number": law["number"]})
+        if not existing:
             await db.traffic_laws.insert_one(law)
     
-    # Create sample user if doesn't exist
-    existing_user = await db.users.find_one({"email": "admin@367.com"})
-    if not existing_user:
-        sample_user = {
+    # Crear usuario admin de ejemplo
+    existing_admin = await db.users.find_one({"email": "admin@367.com"})
+    if not existing_admin:
+        admin_user = {
             "id": str(uuid.uuid4()),
             "email": "admin@367.com",
             "password": get_password_hash("admin123"),
-            "full_name": "Coronel Manuel Pereyra Martinez Carvajal",
+            "full_name": "Administrador 367",
             "role": "admin",
-            "badge_id": "09495023",
+            "badge_id": "0001",
             "rating": 4.0,
             "created_at": datetime.utcnow()
         }
-        await db.users.insert_one(sample_user)
-        
-        # Create sample cases
-        sample_cases = [
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#CRV001",
-                "title": "Caso \"CRV Negra\"",
-                "description": "Vehículo transitando sin placa de identificación",
-                "license_plate": "A784620",
-                "location": "Avenida México, esquina al Palacio Nacional, Juego de la 30 de marzo",
-                "coordinates": "18.4801° N, 69.9328° W",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400", "description": "Vista frontal del vehículo"},
-                    {"url": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400", "description": "Vista lateral"},
-                    {"url": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400", "description": "Placa del vehículo"}
-                ],
-                "status": "pending",
-                "submitted_at": datetime.utcnow() - timedelta(days=2),
-                "due_date": datetime.utcnow() + timedelta(days=5)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#MRA002",
-                "title": "Caso \"Mira Azul\"",
-                "description": "Exceso de velocidad en zona escolar",
-                "license_plate": "B456789",
-                "location": "Calle Ludovino Fdez, Distrito Nacional, Rep. Dom.",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", "description": "Vehículo en movimiento"},
-                    {"url": "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=400", "description": "Radar de velocidad"}
-                ],
-                "status": "pending",
-                "submitted_at": datetime.utcnow() - timedelta(days=1),
-                "due_date": datetime.utcnow() + timedelta(days=6)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#UCP003",
-                "title": "Caso \"Uso Celular Prohibido\"",
-                "description": "Conductor usando celular mientras conduce",
-                "license_plate": "C789012",
-                "location": "Avenida Winston Churchill, cerca del Malecón",
-                "coordinates": "18.4701° N, 69.9001° W",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400", "description": "Conductor con celular"},
-                    {"url": "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400", "description": "Vista del vehículo"}
-                ],
-                "status": "pending",
-                "submitted_at": datetime.utcnow() - timedelta(hours=12),
-                "due_date": datetime.utcnow() + timedelta(days=6)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#EVE004",
-                "title": "Caso \"Exceso Velocidad Extremo\"",
-                "description": "Vehículo superando límite de velocidad en autopista",
-                "license_plate": "D345678",
-                "location": "Autopista Duarte, kilómetro 15",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", "description": "Radar mostrando velocidad"},
-                    {"url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400", "description": "Vehículo en autopista"}
-                ],
-                "status": "pending",
-                "submitted_at": datetime.utcnow() - timedelta(hours=6),
-                "due_date": datetime.utcnow() + timedelta(days=6)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#SEA005",
-                "title": "Caso \"Semáforo en Rojo\"",
-                "description": "Vehículo pasando semáforo en rojo",
-                "license_plate": "E901234",
-                "location": "Intersección Av. 27 de Febrero con Máximo Gómez",
-                "coordinates": "18.4801° N, 69.9301° W",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400", "description": "Semáforo en rojo"},
-                    {"url": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400", "description": "Vehículo cruzando"}
-                ],
-                "status": "pending",
-                "submitted_at": datetime.utcnow() - timedelta(hours=3),
-                "due_date": datetime.utcnow() + timedelta(days=7)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#PB006",
-                "title": "Caso \"Porsche Bolera\"",
-                "description": "Estacionamiento en zona prohibida",
-                "license_plate": "F567890",
-                "location": "Centro Comercial, Plaza Central",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400", "description": "Vehículo estacionado"},
-                    {"url": "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400", "description": "Señal de prohibido estacionar"}
-                ],
-                "status": "approved",
-                "submitted_at": datetime.utcnow() - timedelta(days=5),
-                "reviewed_at": datetime.utcnow() - timedelta(days=2),
-                "reviewed_by": sample_user["id"],
-                "review_comments": "Caso aprobado. Multa aplicada por estacionamiento indebido.",
-                "traffic_law": sample_laws[2],
-                "fine_amount": 1500.0
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#TR007",
-                "title": "Caso \"Tesla Rojo\"",
-                "description": "Vehículo bloqueando cruce peatonal",
-                "license_plate": "G123456",
-                "location": "Avenida Abraham Lincoln, frente al Centro Olímpico",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400", "description": "Vehículo bloqueando paso"},
-                    {"url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400", "description": "Vista del cruce"}
-                ],
-                "status": "approved",
-                "submitted_at": datetime.utcnow() - timedelta(days=3),
-                "reviewed_at": datetime.utcnow() - timedelta(days=1),
-                "reviewed_by": sample_user["id"],
-                "review_comments": "Infracción confirmada. Vehículo obstruyendo paso peatonal.",
-                "traffic_law": sample_laws[1],
-                "fine_amount": 3000.0
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "case_number": "#MD008",
-                "title": "Caso \"Motocicleta Doble Vía\"",
-                "description": "Motocicleta transitando en sentido contrario",
-                "license_plate": "H789012",
-                "location": "Calle El Conde, Zona Colonial",
-                "images": [
-                    {"url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", "description": "Motocicleta en sentido contrario"},
-                    {"url": "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=400", "description": "Señalización vial"}
-                ],
-                "status": "rejected",
-                "submitted_at": datetime.utcnow() - timedelta(days=4),
-                "reviewed_at": datetime.utcnow() - timedelta(days=1),
-                "reviewed_by": sample_user["id"],
-                "review_comments": "Caso rechazado. No se puede determinar claramente la infracción en las imágenes proporcionadas."
-            }
-        ]
-        
-        for case in sample_cases:
-            await db.cases.insert_one(case)
-
+        await db.users.insert_one(admin_user)
+    
     logger.info("Sample data initialized")
+
+@app.on_event("shutdown")
+async def shutdown():
+    client.close()
+    logger.info("MongoDB connection closed")
