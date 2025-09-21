@@ -3,6 +3,18 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import logo from "../assets/img/logo1.1_light_mode.png";
 import logoWhite from "../assets/img/Logo 367-1.2_darkmode.png";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+} from "../components/ui/dropdown-menu";
+
+import { Button } from './ui/button';
+import { Label } from './ui/label';
 
 const DashboardLayout = () => {
 
@@ -67,20 +79,46 @@ const DashboardLayout = () => {
               )}
 
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">🇩🇴 ESP</span>
+                <span className="text-sm text-gray-700">
+                	  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Label>🇩🇴 ESP</Label>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>
+                         <Label>🇺🇸 EN</Label>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <button
-                  onClick={logout}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                >
-                  Cerrar Sesión
-                </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                         <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent className="w-48">
+                        <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        
+                        <DropdownMenuItem>
+                          ID: {user ? user.badge_id : 'Invitado'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem>
+                          <button onClick={logout}  className="text-sm text-gray-500 hover:text-red-800 transition-colors duration-200">
+                            Cerrar sesión
+                          </button>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
               </div>
             </div>
           </div>
