@@ -23,7 +23,7 @@ const ReviewedCases = () => {
 
   const fetchReviewedCases = async () => {
     try {
-      const response = await axios.get(`${API}/cases/reviewed`);
+      const response = await axios.get(`${API}/cases?status=approved`);
       setCases(response.data);
       if (response.data.length > 0) {
         setSelectedCase(response.data[0]);
