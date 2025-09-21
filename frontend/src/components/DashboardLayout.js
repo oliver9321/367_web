@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import logo from "../assets/img/logo1.1_light_mode.png";
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
@@ -22,12 +23,7 @@ const DashboardLayout = () => {
             {/* Logo */}
             <div className="flex items-center">
               <div className="flex items-center">
-                <span className="text-3xl font-bold text-black">367</span>
-                <div className="flex space-x-1 ml-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                </div>
+                <img className="h-8 w-auto" src={logo} alt="367 Logo" />
               </div>
             </div>
 

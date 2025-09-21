@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import logo from "../assets/img/logo1.1_light_mode.png";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState('admin@367.com');
-  const [password, setPassword] = useState('admin123');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("admin@367.com");
+  const [password, setPassword] = useState("admin123");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { user, login } = useAuth();
 
@@ -17,7 +18,7 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     const result = await login(username, password);
 
@@ -29,32 +30,26 @@ const LoginPage = () => {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center relative"
       style={{
         backgroundImage: `url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundSize: "cover",
+        backgroundPosition: "center",
       }}
     >
       {/* Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-      
-      {/* Header */}
-      <div className="absolute top-6 left-6 flex items-center z-10">
-        <div className="flex items-center">
-          <span className="text-4xl font-bold text-black">367</span>
-          <div className="flex space-x-1 ml-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          </div>
-        </div>
-      </div>
 
-      {/* Language Selector */}
-      <div className="absolute top-6 right-6 z-10">
-        <div className="flex items-center text-white bg-black bg-opacity-50 px-3 py-1 rounded">
+      {/* Header */}
+      <div className="absolute top-0 left-0 w-full h-[60px] bg-white flex items-center justify-between px-6 z-10 shadow">
+        {/* Logo */}
+        <div className="flex items-center">
+          <img className="h-9 w-auto" src={logo} alt="367 Logo" />
+        </div>
+
+        {/* Language Selector */}
+        <div className="flex items-center text-black bg-gray-100 px-3 py-1 rounded">
           <span className="text-sm">🇩🇴 Español (República Dominicana)</span>
         </div>
       </div>
@@ -62,7 +57,9 @@ const LoginPage = () => {
       {/* Login Form */}
       <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Ingresa a tu cuenta</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Ingresa a tu cuenta
+          </h2>
           <p className="text-gray-600">Nuevos casos sometidos te esperan</p>
         </div>
 
@@ -104,21 +101,41 @@ const LoginPage = () => {
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Iniciando sesión...
               </div>
             ) : (
-              'Continuar'
+              "Continuar"
             )}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <a href="#" className="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-200">
-            ¿No puedes ingresar a tu cuenta?<br />
+          <a
+            href="#"
+            className="text-blue-600 hover:text-blue-800 text-sm transition-colors duration-200"
+          >
+            ¿No puedes ingresar a tu cuenta?
+            <br />
             Haz clic aquí
           </a>
         </div>
