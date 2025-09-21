@@ -154,7 +154,7 @@ const PendingCases = () => {
       </div>
 
       {/* Center - Case Detail */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
         {selectedCase ? (
           <CaseDetail
             case={selectedCase}
