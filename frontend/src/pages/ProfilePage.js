@@ -138,7 +138,7 @@ const ProfilePage = () => {
           </div>
 
           <div className="text-right">
-            <button className="btn-secondary mb-7">
+            <button className="btn-secondary mb-6">
               Editar perfil
             </button>
             <div className="flex items-center space-x-4 text-sm text-gray-600">
