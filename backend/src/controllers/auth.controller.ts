@@ -3,6 +3,7 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import bcrypt from "bcryptjs";
 import { User } from "../models/user.model.js";
 import { createAccessToken } from "../utils/jwt.util.js";
+import { ResponseUtils, ErrorCodes } from "../middlewares/response.middleware.js";
 
 // --- FUNCIÓN DE UTILIDAD ---
 const createAuthResponse = (user: any) => {
@@ -20,14 +21,17 @@ const createAuthResponse = (user: any) => {
 
 export const registerUser = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    
     const { email, password, name } = req.body as any; 
-
     const existing = await User.findOne({ email });
-    if (existing) {
-      return reply.status(400).send({ message: "User already exists" });
+
+     if (existing) {
+      reply.status(400);
+      return ResponseUtils.error(ErrorCodes.USER_ALREADY_EXISTS, "El usuario ya existe");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = new User({ 
       email, 
       name, 
@@ -37,6 +41,7 @@ export const registerUser = async (req: FastifyRequest, reply: FastifyReply) => 
     await user.save();
 
     return createAuthResponse(user);
+    
   } catch (error) {
     console.error('Registration error:', error);
     return reply.status(500).send({ message: "Internal server error" });
@@ -49,13 +54,19 @@ export const loginUser = async (req: FastifyRequest, reply: FastifyReply) => {
 
     // IMPORTANTE: Incluir el password para la comparación
     const user = await User.findOne({ email }).select('+password'); 
+   
     if (!user) {
-      return reply.status(401).send({ message: "Invalid credentials" });
+      return reply.status(401).send(
+        ResponseUtils.error(ErrorCodes.INVALID_CREDENTIALS, "Credenciales inválidas")
+      );
     }
 
     const valid = await bcrypt.compare(password, user.password);
+    
     if (!valid) {
-      return reply.status(401).send({ message: "Invalid credentials" });
+      return reply.status(401).send(
+        ResponseUtils.error(ErrorCodes.INVALID_CREDENTIALS, "Credenciales inválidas")
+      );
     }
 
     return createAuthResponse(user);
