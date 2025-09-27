@@ -8,10 +8,8 @@ import fastifySwaggerUi from '@fastify/swagger-ui'
 import dotenv from "dotenv";
 import fastifyCors from '@fastify/cors';
 import fastifyMongo from '@fastify/mongodb';
-
-// Importar middlewares y hooks
-import responseMiddleware from './middlewares/response.middleware.js';
 import { errorHandler } from './hooks/error.hook.js';
+import responseMiddleware from './middlewares/response.middleware.js';
 
 dotenv.config();
 
@@ -25,32 +23,41 @@ const options: AppOptions = {}
 const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void> => {
   fastify.log.info('Starting server configuration...');
   
-  // 1. MANEJADOR GLOBAL
+  // 1. ✅ MANEJADOR GLOBAL DE ERRORES (PRIMERO)
   fastify.setErrorHandler(errorHandler);
   
-  // 2. MIDDLEWARE DE FORMATO DE RESPUESTAS
+  // 2. ✅ MIDDLEWARE DE FORMATO DE RESPUESTAS
   fastify.addHook('onRequest', responseMiddleware);
   
-  // 3. Registrar CORS
+  // 3. Registrar CORS (importante para app móvil)
   await fastify.register(fastifyCors, { 
-    origin: '*' 
+    origin: '*', // En producción, especifica tu dominio móvil
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   });
 
-  // 4. Configurar MongoDB
+  // 4. ✅ CONFIGURAR MONGODB CON @fastify/mongodb
   await fastify.register(fastifyMongo, {
     forceClose: true,
     url: process.env.MONGO_URL || "mongodb://localhost:27017/case_management_db",
     database: process.env.DB_NAME || "case_management_db"
   });
 
-  // 5. Verificar conexión MongoDB
+  // 5. ✅ VERIFICAR CONEXIÓN MONGODB
   fastify.addHook('onReady', async () => {
     try {
       const db = fastify.mongo.db;
       if (!db) throw new Error('MongoDB database not available');
       
+      // Crear índices para mejor performance
+      await db.collection('users').createIndex({ email: 1 }, { unique: true });
+      await db.collection('cases').createIndex({ case_number: 1 }, { unique: true });
+      await db.collection('cases').createIndex({ status: 1 });
+      await db.collection('cases').createIndex({ submitted_by: 1 });
+      
       await db.admin().ping();
-      fastify.log.info('✅ MongoDB connected successfully!');
+      fastify.log.info('✅ MongoDB connected successfully with indexes!');
+      
     } catch (error) {
       fastify.log.error('💥 MongoDB connection failed');
       throw error;
@@ -63,7 +70,7 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void>
       openapi: '3.0.0',
       info: {
         title: 'Case Management API',
-        description: 'API para gestión de casos y autenticación',
+        description: 'API para gestión de casos - Mobile App',
         version: '1.0.0'
       },
       servers: [{ url: 'http://localhost:3000', description: 'Development server' }],
@@ -79,21 +86,18 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void>
     }
   });
 
-  // 7. Registrar Swagger UI
   await fastify.register(fastifySwaggerUi, {
     routePrefix: '/docs',
     uiConfig: { docExpansion: 'list' }
   });
 
-  // 8. Cargar plugins
+  // 7. Cargar plugins y rutas
   await fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
     options: opts,
     forceESM: true,
-    ignoreFilter: (path) => path.includes('swagger')
   });
 
-  // 9. Cargar rutas
   await fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'routes'),
     options: opts,
@@ -101,25 +105,30 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void>
     routeParams: true
   });
 
-  // 10. Health check endpoint
+  // 8. ✅ HEALTH CHECK OPTIMIZADO PARA MOBILE
   fastify.get('/health', async (request, reply) => {
     try {
       const db = fastify.mongo.db;
       if (!db) throw new Error('Database not connected');
       
+      const startTime = Date.now();
       await db.admin().ping();
+      const dbResponseTime = Date.now() - startTime;
+      
       return { 
         status: 'OK', 
-        database: 'Connected', 
-        timestamp: new Date().toISOString() 
+        database: 'Connected',
+        response_time: `${dbResponseTime}ms`,
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
       };
     } catch (error) {
       reply.status(503);
-      throw new Error('Database connection failed');
+      throw new Error('Service unavailable');
     }
   });
 
-  fastify.log.info('Server configuration completed!');
+  fastify.log.info('🚀 Mobile API Server configuration completed!');
 }
 
 export default app;
